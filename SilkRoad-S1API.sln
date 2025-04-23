@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SilkRoad-S1API", "SilkRoad-S1API\SilkRoad-S1API.csproj", "{4F51EA68-B08B-4D76-9CAA-B365C841D09C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4F51EA68-B08B-4D76-9CAA-B365C841D09C}.Debug|Any CPU.ActiveCfg = Il2Cpp|Any CPU
+		{4F51EA68-B08B-4D76-9CAA-B365C841D09C}.Debug|Any CPU.Build.0 = Il2Cpp|Any CPU
+		{4F51EA68-B08B-4D76-9CAA-B365C841D09C}.Release|Any CPU.ActiveCfg = Il2Cpp|Any CPU
+		{4F51EA68-B08B-4D76-9CAA-B365C841D09C}.Release|Any CPU.Build.0 = Il2Cpp|Any CPU
+	EndGlobalSection
+EndGlobal
