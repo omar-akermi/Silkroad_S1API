@@ -96,12 +96,16 @@
 
     <!-- Shared Deps -->
     <ItemGroup>
-        <PackageReference Include="S1API" Version="1.2.0" />
-        <Reference Include="0Harmony">
-            <HintPath>$(MelonLoaderAssembliesPath)\0Harmony.dll</HintPath>
-        </Reference>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-        <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
+        <!-- <PackageReference Include="S1API" Version="1.2.4" />-->
+       <Reference Include="0Harmony">
+           <HintPath>$(MelonLoaderAssembliesPath)\0Harmony.dll</HintPath>
+       </Reference>
+       <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+       <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
+      <Reference Include="S1API">
+         <HintPath>..\..\..\Documents\GitHub\S1API\S1API\bin\Il2Cpp\netstandard2.1\S1API.dll</HintPath>
+       </Reference>
+
 
     </ItemGroup>
 

@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using S1API.Internal.Utils;
+using S1API.PhoneApp;
 using S1API.Utils;
 using UnityEngine;
 
@@ -36,6 +37,16 @@ namespace SilkRoad
     "Funds delivered. You handled it right — that earns respect.",
     "You’ve been paid. Stick with us, and there’s more where that came from."
 };
+
+        public bool IsInitialized { get; private set; } = false;
+
+        protected override void OnLoaded()
+        {
+            base.OnLoaded();
+
+            Contacts.Buyer = this;
+            IsInitialized = true;
+        }
 
 
 

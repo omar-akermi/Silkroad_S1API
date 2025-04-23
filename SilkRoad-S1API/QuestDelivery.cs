@@ -25,7 +25,6 @@ namespace SilkRoad
         public DeliverySaveData Data = new DeliverySaveData();
 
         private DeadDropInstance deliveryDrop;
-        private DeadDropInstance rewardDrop;
         public static HashSet<string> CompletedQuestKeys = new HashSet<string>();
 
         private QuestEntry deliveryEntry;
@@ -33,6 +32,31 @@ namespace SilkRoad
         public static bool QuestActive = false;
         public static event Action OnQuestCompleted;
         protected override Sprite? QuestIcon => ImageUtils.LoadImage("silkroad/SilkroadIcon_quest.png");
+        protected override void OnLoaded()
+        {
+            base.OnLoaded();
+            MelonCoroutines.Start(WaitForBuyerAndSendStatus());
+        }
+
+        private System.Collections.IEnumerator WaitForBuyerAndSendStatus()
+        {
+            float timeout = 5f;
+            float waited = 0f;
+
+            while ((Contacts.Buyer == null || !Contacts.Buyer.IsInitialized) && waited < timeout)
+            {
+                waited += Time.deltaTime;
+                yield return null; // wait 1 frame
+            }
+
+            if (Contacts.Buyer == null || !Contacts.Buyer.IsInitialized)
+            {
+                MelonLogger.Warning("⚠️ Buyer NPC still not initialized after timeout. Skipping status sync.");
+                yield break;
+            }
+            
+        }
+        
         protected override void OnCreated()
         {
             base.OnCreated();
@@ -56,21 +80,16 @@ namespace SilkRoad
                 }
 
                 deliveryDrop = drops[RandomUtils.RangeInt(0, drops.Count)];
-                rewardDrop = drops[Random.Range(0, drops.Count)];
                 //deliveryDrop = drops[5];
-                //rewardDrop = drops[5];
 
-                Data.DeliveryDropGUID = deliveryDrop.GUID;
-                Data.RewardDropGUID = rewardDrop.GUID;
-                Data.Initialized = true;
+                Data.DeliveryDropGUID = deliveryDrop.GUID; Data.Initialized = true;
                 
             }
             else
             {
                 deliveryDrop = DeadDropManager.All.FirstOrDefault(d => d.GUID == Data.DeliveryDropGUID);
-                rewardDrop = DeadDropManager.All.FirstOrDefault(d => d.GUID == Data.RewardDropGUID);
 
-                if (deliveryDrop == null || rewardDrop == null)
+                if (deliveryDrop == null )
                 {
                     MelonLogger.Warning("⚠️ Failed to resolve saved DeadDrops. Reassigning...");
                     var drops = DeadDropManager.All.ToList();
@@ -78,9 +97,7 @@ namespace SilkRoad
                     if (drops.Count >= 2)
                     {
                         deliveryDrop = drops[0];
-                        rewardDrop = drops[1];
                         Data.DeliveryDropGUID = deliveryDrop.GUID;
-                        Data.RewardDropGUID = rewardDrop.GUID;
                     }
                     else
                     {
@@ -96,12 +113,11 @@ namespace SilkRoad
             deliveryEntry.POIPosition = deliveryDrop.Position;
             deliveryEntry.Begin();
             rewardEntry = AddEntry($"Wait for the payment to arrive.");
-            rewardEntry.POIPosition = rewardDrop.Position;
             rewardEntry.SetState(QuestState.Inactive);
 
             deliveryDrop.Storage.OnClosed += CheckDelivery;
 
-            Contacts.Buyer?.SendDeliveryAccepted(Data.ProductID, (int)Data.RequiredAmount);
+            //Contacts.Buyer?.SendDeliveryAccepted(Data.ProductID, (int)Data.RequiredAmount);
 
             MelonLogger.Msg("📦 QuestDelivery started with drop locations assigned.");
         }
@@ -176,7 +192,7 @@ namespace SilkRoad
         // Modify the DelayedReward coroutine:
         private System.Collections.IEnumerator DelayedReward()
         {
-            float delaySeconds = (float)RandomUtils.RangeInt(300,600);
+            float delaySeconds = (float)RandomUtils.RangeInt(120,200);
             yield return new WaitForSeconds(delaySeconds);
 
             TryGiveReward("Delay");
@@ -188,7 +204,7 @@ namespace SilkRoad
             if (rewardGiven) return; // Prevent double reward
             rewardGiven = true;
             // Unsubscribe from OnDayPass when reward is given
-            TimeManager.OnDayPass -= TimeManager_OnDayPass;
+           TimeManager.OnDayPass -= TimeManager_OnDayPass;
 
             if (deliveryEntry == null)
                 return;
