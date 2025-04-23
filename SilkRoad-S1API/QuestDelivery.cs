@@ -11,6 +11,7 @@ using S1API.Products;
 using S1API.Saveables;
 using S1API.NPCs;
 using System.Collections.Generic;
+using S1API.GameTime;
 using S1API.Internal.Utils;
 using S1API.PhoneApp;
 using S1API.Utils;
@@ -105,6 +106,9 @@ namespace SilkRoad
             MelonLogger.Msg("📦 QuestDelivery started with drop locations assigned.");
         }
 
+        // Add this field to your QuestDelivery class
+        private bool rewardGiven = false;
+
         private void CheckDelivery()
         {
             MelonLogger.Msg("CheckDelivery called.");
@@ -152,25 +156,48 @@ namespace SilkRoad
 
             deliveryEntry.Complete();
             rewardEntry.SetState(QuestState.Active);
+            rewardGiven = false; // Reset flag before starting coroutine and subscribing
             MelonCoroutines.Start(DelayedReward());
+
+            // Subscribe to OnDayPass when reward entry becomes active
+            TimeManager.OnDayPass += TimeManager_OnDayPass;
 
             Contacts.Buyer?.SendDeliverySuccess(Data.ProductID);
 
             MelonLogger.Msg("✅ Delivery complete. Reward entry now active.");
         }
+
+        // Add a method to handle the OnDayPass event
+        private void TimeManager_OnDayPass()
+        {
+            TryGiveReward("OnDayPass");
+        }
+
+        // Modify the DelayedReward coroutine:
         private System.Collections.IEnumerator DelayedReward()
         {
-            float delaySeconds = (float)RandomUtils.RangeInt(300,600); // Adjust delay as needed
+            float delaySeconds = (float)RandomUtils.RangeInt(300,600);
             yield return new WaitForSeconds(delaySeconds);
 
+            TryGiveReward("Delay");
+        }
+
+        // Add this new method to handle awarding the reward safely
+        private void TryGiveReward(string source)
+        {
+            if (rewardGiven) return; // Prevent double reward
+            rewardGiven = true;
+            // Unsubscribe from OnDayPass when reward is given
+            TimeManager.OnDayPass -= TimeManager_OnDayPass;
+
             if (deliveryEntry == null)
-                yield break;
+                return;
 
             var rewardAmount = Data.Reward;
 
             ConsoleHelper.RunCashCommand(rewardAmount);
 
-            MelonLogger.Msg($"💵 Player rewarded with ${rewardAmount} using Console.ChangeCashCommand.");
+            MelonLogger.Msg($"💵 Player rewarded with ${rewardAmount} using Console.ChangeCashCommand. Source: {source}");
 
             QuestActive = false;
             string key = $"{Data.ProductID}_{Data.RequiredAmount}";
@@ -179,7 +206,6 @@ namespace SilkRoad
             rewardEntry?.Complete();
             Complete();
             OnQuestCompleted?.Invoke();
-            
         }
         protected override string Title =>
             Data?.ProductID != null ? $"Deliver {Data.ProductID}" : "Silkroad Delivery";
