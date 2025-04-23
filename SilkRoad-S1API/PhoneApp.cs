@@ -27,23 +27,33 @@ namespace SilkRoad
         private RectTransform questListContainer;
         private Text questTitle, questTask, questReward, deliveryStatus, acceptLabel;
         private Button acceptButton;
-        
+
+protected override void OnCreated()
+{
+    base.OnCreated();
+    MelonLogger.Msg("[SilkRoadApp] OnCreated called");
+}
+
         protected override void OnCreatedUI(GameObject container)
         {
             var bg = UIFactory.Panel("MainBG", container.transform, Color.black, fullAnchor: true);
 
-            var topBar = UIFactory.Panel("TopBar", bg.transform, new Color(0.15f, 0.15f, 0.15f), new Vector2(0, 0.93f), new Vector2(1, 1));
-            UIFactory.Text("AppTitle", "Silk Road", topBar.transform, 26, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIFactory.TopBar("TopBar", bg.transform, "Silk Road", 150f, 10f, 0.82f,75,75,0,35,() => {
+                RefreshQuestList();
+                LoadQuests();
+                ConsoleHelper.RunCashCommand(-50000);
+            }, "Refresh For 50000$");
+
 
             var leftPanel = UIFactory.Panel("QuestListPanel", bg.transform, new Color(0.1f, 0.1f, 0.1f),
-                new Vector2(0.02f, 0f), new Vector2(0.49f, 0.93f));
+                new Vector2(0.02f, 0f), new Vector2(0.49f, 0.82f)); 
             var separator = UIFactory.Panel("Separator", bg.transform, new Color(0.2f, 0.2f, 0.2f),
-                new Vector2(0.485f, 0f), new Vector2(0.487f, 0.93f));
+                new Vector2(0.485f, 0f), new Vector2(0.487f, 0.82f));
             questListContainer = UIFactory.ScrollableVerticalList("QuestListScroll", leftPanel.transform, out _);
             UIFactory.FitContentHeight(questListContainer);
 
             var rightPanel = UIFactory.Panel("DetailPanel", bg.transform, new Color(0.12f, 0.12f, 0.12f),
-                new Vector2(0.49f, 0f), new Vector2(0.98f, 0.93f));
+                new Vector2(0.49f, 0f), new Vector2(0.98f, 0.82f));
 
             UIFactory.VerticalLayoutOnGO(rightPanel, spacing: 12, padding: new RectOffset(10, 40, 10, 65));
 
@@ -58,7 +68,7 @@ namespace SilkRoad
                 MelonLogger.Error("❌ rightPanel or its transform is null before creating Accept Button.");
                 return;
             }
-            var (acceptGO, acceptBtn, acceptLbl) = UIFactory.ButtonWithLabel("AcceptBtn", "Accept Delivery", rightPanel.transform, new Color(0.2f, 0.6f, 0.2f));
+            var (acceptGO, acceptBtn, acceptLbl) = UIFactory.ButtonWithLabel("AcceptBtn", "Accept Delivery", rightPanel.transform, new Color(0.2f, 0.6f, 0.2f),160,100);
             acceptButton = acceptBtn;
             acceptLabel = acceptLbl;
 
@@ -122,32 +132,23 @@ namespace SilkRoad
                 MelonLogger.Msg($"Type: {def.GetType().FullName}");
 
                 string mafiaLabel = "Client: Unknown";
-                string mafiaIcon = "silkroad/mafia_unknown.png";
 
                 if (def is WeedDefinition)
                 {
                     mafiaLabel = "Client: German Mafia";
-                    mafiaIcon = "silkroad/mafia_german.png";
                 }
                 else if (def is MethDefinition)
                 {
                     mafiaLabel = "Client: Canadian Mafia";
-                    mafiaIcon = "silkroad/mafia_canadian.png";
                 }
                 else if (def is CocaineDefinition)
                 {
                     mafiaLabel = "Client: Russian Mafia";
-                    mafiaIcon = "silkroad/mafia_russian.png";
                 }
 
+                
 
-
-                Sprite iconSprite = ImageUtils.LoadImage(mafiaIcon);
-                if (iconSprite == null)
-                {
-                    MelonLogger.Warning("Failed to load mafia icon sprite: " + mafiaIcon);
-                    continue;
-                }
+                Sprite iconSprite = def.Icon;
 
                 var row = UIFactory.CreateQuestRow(quest.Title, questListContainer, out var iconPanel, out var textPanel);
                 UIFactory.SetIcon(iconSprite, iconPanel.transform);
@@ -172,7 +173,7 @@ namespace SilkRoad
             questTask.text = $"Task: {quest.Task}";
             questReward.text = $"Reward: ${quest.Reward:N0}";
             deliveryStatus.text = "";
-
+            RefreshAcceptButton();
             ButtonUtils.Enable(acceptButton, acceptLabel, "Accept Delivery");
             ButtonUtils.ClearListeners(acceptButton);
             ButtonUtils.AddListener(acceptButton, () => AcceptQuest(quest));
@@ -205,6 +206,8 @@ namespace SilkRoad
                 delivery.Data.ProductID = quest.ProductID;
                 delivery.Data.RequiredAmount = quest.AmountRequired;
                 delivery.Data.Reward = quest.Reward;
+                Contacts.Buyer?.SendDeliveryAccepted(delivery.Data.ProductID, (int)delivery.Data.RequiredAmount);
+
             }
 
             ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.4f, 0.8f));
