@@ -21,7 +21,7 @@ namespace SilkRoad
         protected override string AppName => "Silkroad";
         protected override string AppTitle => "Silkroad";
         protected override string IconLabel => "Silkroad";
-        protected override string IconFileName => "silkroad/SilkroadIcon.png";
+        protected override string IconFileName => "silkroad\\SilkroadIcon.png";
 
         private List<QuestData> quests;
         private RectTransform questListContainer;
@@ -39,9 +39,7 @@ protected override void OnCreated()
             var bg = UIFactory.Panel("MainBG", container.transform, Color.black, fullAnchor: true);
 
             UIFactory.TopBar("TopBar", bg.transform, "Silk Road", 150f, 10f, 0.82f,75,75,0,35,() => {
-                RefreshQuestList();
-                LoadQuests();
-                ConsoleHelper.RunCashCommand(-50000);
+                RefreshButton();
             }, "Refresh For 50000$");
 
 
@@ -76,6 +74,12 @@ protected override void OnCreated()
             LoadQuests();
         }
 
+        private void RefreshButton()
+        {
+            RefreshQuestList();
+            LoadQuests();
+            ConsoleHelper.RunCashCommand(-50000);
+        }
         private void LoadQuests()
         {
             quests = new List<QuestData>();

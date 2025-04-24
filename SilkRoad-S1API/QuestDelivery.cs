@@ -31,7 +31,7 @@ namespace SilkRoad
         private QuestEntry rewardEntry;
         public static bool QuestActive = false;
         public static event Action OnQuestCompleted;
-        protected override Sprite? QuestIcon => ImageUtils.LoadImage("silkroad/SilkroadIcon_quest.png");
+        protected override Sprite? QuestIcon => ImageUtils.LoadImage("..\\..\\Mods\\silkroad\\SilkroadIcon_quest.png");
         protected override void OnLoaded()
         {
             base.OnLoaded();

@@ -12,7 +12,7 @@ namespace SilkRoad
     public class BlackmarketBuyer : NPC
     {
         public BlackmarketBuyer() : base("blackmarket_buyer", "Blackmarket", "Buyer") { }
-        protected override Sprite? NPCIcon => ImageUtils.LoadImage("silkroad/SilkroadIcon.png");
+        protected override Sprite? NPCIcon => ImageUtils.LoadImage("..\\..\\Mods\\silkroad\\SilkroadIcon.png");
 
         private static readonly string[] DeliveryAcceptedTexts = {
     "We’ve heard of your product. {amount} bricks of {product}. Impress us.",
