@@ -90,18 +90,23 @@ protected override void OnCreated()
             var (refreshGO, refreshBtn, refreshLbl) = UIFactory.RoundedButtonWithLabel("RefreshBtn", "Refresh Order list", buttonRow.transform, new Color32(32,0x82,0xF6,0xff), 300, 90,18,Color.white);
             refreshButton = refreshBtn;
             refreshLabel = refreshLbl;
+            ButtonUtils.AddListener(refreshButton, () => RefreshButton());
 
 // Cancel Button
-            var (cancelGO, cancelBtn, cancelLbl) = UIFactory.RoundedButtonWithLabel("CancelBtn", "Cancel current Delivery", buttonRow.transform, new Color(0.8f, 0.2f, 0.2f), 300, 90f,18,Color.white);
+
+            var (cancelGO, cancelBtn, cancelLbl) = UIFactory.RoundedButtonWithLabel("CancelBtn", "Cancel current Delivery", buttonRow.transform, Color.red, 300, 90f,18,Color.black);
             cancelButton = cancelBtn;
             cancelLabel = cancelLbl;
+            if (!QuestDelivery.QuestActive)
+            ButtonUtils.Disable(cancelButton, cancelLabel, "No quest active");
+
 
 // Accept Button (separate row)
-            var (acceptGO, acceptBtn, acceptLbl) = UIFactory.RoundedButtonWithLabel("AcceptBtn", "Accept Delivery", rightPanel.transform, new Color(0.2f, 0.6f, 0.2f), 460f, 60f,22,Color.white);
+            var (acceptGO, acceptBtn, acceptLbl) = UIFactory.RoundedButtonWithLabel("AcceptBtn", "No quest selected", rightPanel.transform, new Color32(0x91,0xFF,0x8E,0xff), 460f, 60f,22,Color.black);
             acceptButton = acceptBtn;
             acceptLabel = acceptLbl;
+            ButtonUtils.Disable(acceptBtn, acceptLabel, "No quest selected");
 
-            acceptLabel = acceptLbl;
 
 
             LoadQuests();
@@ -222,7 +227,7 @@ protected override void OnCreated()
                 active.ForceCancel();
                 deliveryStatus.text = "🚫 Delivery canceled.";
                 ButtonUtils.Disable(cancelButton, cancelLabel, "Canceled");
-                ButtonUtils.Disable(acceptButton, acceptLabel, "Unavailable");
+                ButtonUtils.Enable(acceptButton, acceptLabel, "Accept Delivery");
                 RefreshQuestList();
             }
             catch (Exception ex)
@@ -240,11 +245,24 @@ protected override void OnCreated()
             questTask.text = $"Task: {quest.Task}";
             questReward.text = $"Reward: <color=#00FF00>${quest.Reward:N0}</color>";
             deliveryStatus.text = "";
-            RefreshAcceptButton();
-            ButtonUtils.Enable(acceptButton, acceptLabel, "Accept Delivery");
-            ButtonUtils.ClearListeners(acceptButton);
-            ButtonUtils.AddListener(acceptButton, () => AcceptQuest(quest));
-            ButtonUtils.Enable(cancelButton, cancelLabel, "Cancel Current Delivery");
+            if (!QuestDelivery.QuestActive)
+            {
+                ButtonUtils.Enable(acceptButton, acceptLabel, "Accept Delivery");
+                ButtonUtils.ClearListeners(acceptButton);
+                ButtonUtils.AddListener(acceptButton, () => AcceptQuest(quest));
+            }
+
+            if (QuestDelivery.QuestActive)
+            {
+                ButtonUtils.Enable(acceptButton, acceptLabel, "In Progress");
+                ButtonUtils.ClearListeners(acceptButton);
+                ButtonUtils.AddListener(acceptButton, () => AcceptQuest(quest));
+                ButtonUtils.Enable(cancelButton, cancelLabel, "Cancel Current Delivery");
+                ButtonUtils.ClearListeners(cancelButton);
+                ButtonUtils.AddListener(cancelButton, () => CancelCurrentQuest(quest));
+            }
+
+            //ButtonUtils.Disable(cancelButton, cancelLabel, "No quest active");
             ButtonUtils.ClearListeners(cancelButton);
             ButtonUtils.AddListener(cancelButton, () => CancelCurrentQuest(quest));
             ButtonUtils.Enable(refreshButton, refreshLabel, "Refresh Order List");
@@ -259,14 +277,16 @@ protected override void OnCreated()
 
             if (QuestDelivery.QuestActive)
             {
-                ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.4f, 0.8f));
+                ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color32(0x91,0xFF,0x8E,0xff));
                 deliveryStatus.text = "⚠️ Finish your current job first!";
+                ButtonUtils.Disable(acceptButton, acceptLabel, "In Progress");
+
                 return;
             }
 
             if (QuestDelivery.CompletedQuestKeys.Contains(questKey))
             {
-                ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.6f, 0.2f));
+                ButtonUtils.SetStyle(acceptButton, acceptLabel, "Already Delivered", new Color32(0x91,0xFF,0x8E,0xff));
                 deliveryStatus.text = "⛔ Already delivered this shipment.";
                 ButtonUtils.Disable(acceptButton, acceptLabel, "Already Delivered");
                 return;
@@ -285,17 +305,14 @@ protected override void OnCreated()
                 QuestDelivery.Active = delivery; // ✅ FIX: set Active manually here
             }
 
-            ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.4f, 0.8f));
+            ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color32(0x91,0xFF,0x8E,0xff));
 
 
             deliveryStatus.text = "📦 Delivery started!";
             acceptButton.interactable = false;
+            ButtonUtils.Enable(cancelButton, cancelLabel, "Cancel Current Delivery");
         }
 
-        public void RefreshAcceptButton()
-        {
-            ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.4f, 0.8f));
 
-        }
     }
 }
