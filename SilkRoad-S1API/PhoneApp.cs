@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MelonLoader;
+using S1API.GameTime;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
@@ -25,8 +26,9 @@ namespace SilkRoad
 
         private List<QuestData> quests;
         private RectTransform questListContainer;
-        private Text questTitle, questTask, questReward, deliveryStatus, acceptLabel;
-        private Button acceptButton;
+        private Text questTitle, questTask, questReward, deliveryStatus, acceptLabel,cancelLabel,refreshLabel;
+        private Button acceptButton,cancelButton,refreshButton;
+        
 
 protected override void OnCreated()
 {
@@ -36,15 +38,24 @@ protected override void OnCreated()
 
         protected override void OnCreatedUI(GameObject container)
         {
+
             var bg = UIFactory.Panel("MainBG", container.transform, Color.black, fullAnchor: true);
 
-            UIFactory.TopBar("TopBar", bg.transform, "Silk Road", 150f, 10f, 0.82f,75,75,0,35,() => {
-                RefreshButton();
-            }, "Refresh For 50000$");
 
 
+            UIFactory.TopBar(
+                name: "TopBar",
+                parent: bg.transform,
+                title: "Silk Road",
+                topbarSize: 0.82f,
+                paddingLeft: 75,
+                paddingRight: 75,
+                paddingTop: 0,
+                paddingBottom: 35
+            );
+            
             var leftPanel = UIFactory.Panel("QuestListPanel", bg.transform, new Color(0.1f, 0.1f, 0.1f),
-                new Vector2(0.02f, 0f), new Vector2(0.49f, 0.82f)); 
+                new Vector2(0.02f, 0.05f), new Vector2(0.49f, 0.82f)); 
             var separator = UIFactory.Panel("Separator", bg.transform, new Color(0.2f, 0.2f, 0.2f),
                 new Vector2(0.485f, 0f), new Vector2(0.487f, 0.82f));
             questListContainer = UIFactory.ScrollableVerticalList("QuestListScroll", leftPanel.transform, out _);
@@ -53,21 +64,43 @@ protected override void OnCreated()
             var rightPanel = UIFactory.Panel("DetailPanel", bg.transform, new Color(0.12f, 0.12f, 0.12f),
                 new Vector2(0.49f, 0f), new Vector2(0.98f, 0.82f));
 
-            UIFactory.VerticalLayoutOnGO(rightPanel, spacing: 12, padding: new RectOffset(10, 40, 10, 65));
+// Use vertical layout with padding and spacing like Tax & Wash
+            UIFactory.VerticalLayoutOnGO(rightPanel, spacing: 14, padding: new RectOffset(24, 50, 15, 70));
 
-            questTitle = UIFactory.Text("Title", "Select a quest", rightPanel.transform, 22, TextAnchor.UpperLeft, FontStyle.Bold);
-            questTask = UIFactory.Text("Task", "Task: --", rightPanel.transform, 18);
-            questReward = UIFactory.Text("Reward", "Reward: --", rightPanel.transform, 18);
-            deliveryStatus = UIFactory.Text("Delivery", "", rightPanel.transform, 16);
+// Header
+            questTitle = UIFactory.Text("Title", "Select a quest", rightPanel.transform, 24, TextAnchor.MiddleLeft, FontStyle.Bold);
 
+// Styled task/reward rows (Label + Value style)
+            questTask = UIFactory.Text("Task", "Task: --", rightPanel.transform, 18, TextAnchor.MiddleLeft, FontStyle.Normal);
+            questReward = UIFactory.Text("Reward", "Reward: --", rightPanel.transform, 18, TextAnchor.MiddleLeft, FontStyle.Normal);
 
-            if (rightPanel == null || rightPanel.transform == null)
-            {
-                MelonLogger.Error("❌ rightPanel or its transform is null before creating Accept Button.");
-                return;
-            }
-            var (acceptGO, acceptBtn, acceptLbl) = UIFactory.ButtonWithLabel("AcceptBtn", "Accept Delivery", rightPanel.transform, new Color(0.2f, 0.6f, 0.2f),160,100);
+// Optional delivery message
+            deliveryStatus = UIFactory.Text("DeliveryStatus", "", rightPanel.transform, 16, TextAnchor.MiddleLeft, FontStyle.Italic);
+            deliveryStatus.color = new Color(0.7f, 0.9f, 0.7f);
+            
+// Create a horizontal container for Refresh and Cancel
+            var topButtonRow = UIFactory.Panel("TopButtonRow", rightPanel.transform, Color.clear);
+            UIFactory.HorizontalLayoutOnGO(topButtonRow, spacing: 12);
+            UIFactory.SetLayoutGroupPadding(topButtonRow.GetComponent<HorizontalLayoutGroup>(), 0, 0, 0, 0);
+
+// Create horizontal row for top buttons
+            var buttonRow = UIFactory.ButtonRow("TopButtons", rightPanel.transform, spacing: 14);
+
+// Refresh Button
+            var (refreshGO, refreshBtn, refreshLbl) = UIFactory.RoundedButtonWithLabel("RefreshBtn", "Refresh Order list", buttonRow.transform, new Color32(32,0x82,0xF6,0xff), 300, 90,18,Color.white);
+            refreshButton = refreshBtn;
+            refreshLabel = refreshLbl;
+
+// Cancel Button
+            var (cancelGO, cancelBtn, cancelLbl) = UIFactory.RoundedButtonWithLabel("CancelBtn", "Cancel current Delivery", buttonRow.transform, new Color(0.8f, 0.2f, 0.2f), 300, 90f,18,Color.white);
+            cancelButton = cancelBtn;
+            cancelLabel = cancelLbl;
+
+// Accept Button (separate row)
+            var (acceptGO, acceptBtn, acceptLbl) = UIFactory.RoundedButtonWithLabel("AcceptBtn", "Accept Delivery", rightPanel.transform, new Color(0.2f, 0.6f, 0.2f), 460f, 60f,22,Color.white);
             acceptButton = acceptBtn;
+            acceptLabel = acceptLbl;
+
             acceptLabel = acceptLbl;
 
 
@@ -170,17 +203,54 @@ protected override void OnCreated()
 
             }
         }
+        private void CancelCurrentQuest(QuestData quest)
+        {
+            var active = QuestDelivery.Active;
+            if (active == null)
+            {
+                MelonLogger.Warning("❌ No active QuestDelivery found to cancel.");
+                deliveryStatus.text = "❌ No active delivery to cancel.";
+                return;
+            }
+
+            MelonLogger.Msg($"Active quest : {active.Data.ProductID} ");
+
+            
+
+            try
+            {
+                active.ForceCancel();
+                deliveryStatus.text = "🚫 Delivery canceled.";
+                ButtonUtils.Disable(cancelButton, cancelLabel, "Canceled");
+                ButtonUtils.Disable(acceptButton, acceptLabel, "Unavailable");
+                RefreshQuestList();
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"❌ CancelCurrentQuest() exception: {ex}");
+                deliveryStatus.text = "❌ Cancel failed.";
+            }
+        }
+
+
 
         private void OnSelectQuest(QuestData quest)
         {
             questTitle.text = quest.Title;
             questTask.text = $"Task: {quest.Task}";
-            questReward.text = $"Reward: ${quest.Reward:N0}";
+            questReward.text = $"Reward: <color=#00FF00>${quest.Reward:N0}</color>";
             deliveryStatus.text = "";
             RefreshAcceptButton();
             ButtonUtils.Enable(acceptButton, acceptLabel, "Accept Delivery");
             ButtonUtils.ClearListeners(acceptButton);
             ButtonUtils.AddListener(acceptButton, () => AcceptQuest(quest));
+            ButtonUtils.Enable(cancelButton, cancelLabel, "Cancel Current Delivery");
+            ButtonUtils.ClearListeners(cancelButton);
+            ButtonUtils.AddListener(cancelButton, () => CancelCurrentQuest(quest));
+            ButtonUtils.Enable(refreshButton, refreshLabel, "Refresh Order List");
+            ButtonUtils.ClearListeners(refreshButton);
+            ButtonUtils.AddListener(refreshButton, () => RefreshButton());
+
         }
 
         private void AcceptQuest(QuestData quest)
@@ -212,6 +282,7 @@ protected override void OnCreated()
                 delivery.Data.Reward = quest.Reward;
                 Contacts.Buyer?.SendDeliveryAccepted(delivery.Data.ProductID, (int)delivery.Data.RequiredAmount);
 
+                QuestDelivery.Active = delivery; // ✅ FIX: set Active manually here
             }
 
             ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.4f, 0.8f));
@@ -223,7 +294,7 @@ protected override void OnCreated()
 
         public void RefreshAcceptButton()
         {
-            ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.6f, 0.2f));
+            ButtonUtils.SetStyle(acceptButton, acceptLabel, "In Progress", new Color(0.2f, 0.4f, 0.8f));
 
         }
     }

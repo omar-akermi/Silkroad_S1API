@@ -30,6 +30,8 @@ namespace SilkRoad
         private QuestEntry deliveryEntry;
         private QuestEntry rewardEntry;
         public static bool QuestActive = false;
+        public static QuestDelivery? Active { get; internal set; }
+
         public static event Action OnQuestCompleted;
         protected override Sprite? QuestIcon => ImageUtils.LoadImage("..\\..\\Mods\\silkroad\\SilkroadIcon_quest.png");
         protected override void OnLoaded()
@@ -56,12 +58,35 @@ namespace SilkRoad
             }
             
         }
-        
+        public QuestEntry GetDeliveryEntry() => deliveryEntry;
+        public QuestEntry GetRewardEntry() => rewardEntry;
+        public void ForceCancel()
+        {
+            MelonLogger.Msg("🚫 QuestDelivery.ForceCancel() called.");
+
+            TimeManager.OnDayPass -= TimeManager_OnDayPass;
+
+            if (deliveryEntry != null && deliveryEntry.State != QuestState.Completed)
+                deliveryEntry.SetState(QuestState.Failed);
+
+            if (rewardEntry != null && rewardEntry.State != QuestState.Completed)
+                rewardEntry.SetState(QuestState.Failed);
+
+
+            QuestActive = false;
+            Active = null; // 👈 Reset after cancel
+            Fail();
+
+
+            //Contacts.Buyer?.SendDeliveryCanceled?.Invoke(); // Optional if you want to notify buyer
+        }
+
         protected override void OnCreated()
         {
             base.OnCreated();
             QuestActive = true;
-            
+            Active = this;
+
             MelonLogger.Msg($"🔍 QuestDelivery CreateInternal: ProductID={Data?.ProductID}, Initialized={Data?.Initialized}");
 
             if (Data == null)
