@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MelonLoader;
+using S1API.Console;
 using S1API.GameTime;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,10 +12,10 @@ using S1API.UI;
 using SilkRoad;
 using ProductManager = S1API.Products.ProductManager;
 using S1API.Internal.Utils;
-using S1API.Utils;
 using ProductDefinition = S1API.Products.ProductDefinition;
 using S1API.Products;
-
+using Object = UnityEngine.Object;
+using S1API.Money;
 namespace SilkRoad
 {
     public class MyApp : S1API.PhoneApp.PhoneApp
@@ -28,7 +29,7 @@ namespace SilkRoad
         private RectTransform questListContainer;
         private Text questTitle, questTask, questReward, deliveryStatus, acceptLabel,cancelLabel,refreshLabel;
         private Button acceptButton,cancelButton,refreshButton;
-        
+
 
 protected override void OnCreated()
 {
@@ -53,9 +54,9 @@ protected override void OnCreated()
                 paddingTop: 0,
                 paddingBottom: 35
             );
-            
+
             var leftPanel = UIFactory.Panel("QuestListPanel", bg.transform, new Color(0.1f, 0.1f, 0.1f),
-                new Vector2(0.02f, 0.05f), new Vector2(0.49f, 0.82f)); 
+                new Vector2(0.02f, 0.05f), new Vector2(0.49f, 0.82f));
             var separator = UIFactory.Panel("Separator", bg.transform, new Color(0.2f, 0.2f, 0.2f),
                 new Vector2(0.485f, 0f), new Vector2(0.487f, 0.82f));
             questListContainer = UIFactory.ScrollableVerticalList("QuestListScroll", leftPanel.transform, out _);
@@ -77,7 +78,7 @@ protected override void OnCreated()
 // Optional delivery message
             deliveryStatus = UIFactory.Text("DeliveryStatus", "", rightPanel.transform, 16, TextAnchor.MiddleLeft, FontStyle.Italic);
             deliveryStatus.color = new Color(0.7f, 0.9f, 0.7f);
-            
+
 // Create a horizontal container for Refresh and Cancel
             var topButtonRow = UIFactory.Panel("TopButtonRow", rightPanel.transform, Color.clear);
             UIFactory.HorizontalLayoutOnGO(topButtonRow, spacing: 12);
@@ -94,7 +95,7 @@ protected override void OnCreated()
 
 // Cancel Button
 
-            var (cancelGO, cancelBtn, cancelLbl) = UIFactory.RoundedButtonWithLabel("CancelBtn", "Cancel current Delivery", buttonRow.transform, Color.red, 300, 90f,18,Color.black);
+            var (cancelGO, cancelBtn, cancelLbl) = UIFactory.RoundedButtonWithLabel("CancelBtn", "Cancel current Delivery", buttonRow.transform, new Color32(0XEB,0X35,0X38,0Xff), 300, 90f,18,Color.black);
             cancelButton = cancelBtn;
             cancelLabel = cancelLbl;
             if (!QuestDelivery.QuestActive)
@@ -114,6 +115,11 @@ protected override void OnCreated()
 
         private void RefreshButton()
         {
+            if (Money.GetCashBalance() < 50000)
+            {
+                deliveryStatus.text = "Not Enough Money";
+                return;
+            }
             RefreshQuestList();
             LoadQuests();
             ConsoleHelper.RunCashCommand(-50000);
@@ -129,7 +135,7 @@ protected override void OnCreated()
             }
 
             var used = new HashSet<string>();
-            for (int i = 0; i < Math.Min(8, discovered.Count); i++)
+            for (int i = 0; i < Math.Min(4, discovered.Count); i++)
             {
                 var def = discovered.PickUnique(p => used.Contains(p.Name), 10);
                 if (def == null) continue;
@@ -152,17 +158,42 @@ protected override void OnCreated()
             RefreshQuestList();
         }
 
+        public static void ClearChildren(Transform parent)
+        {
+            if (parent == null)
+            {
+                MelonLogger.Warning("[UIFactory] ClearChildren called with null parent.");
+                return;
+            }
+
+            try
+            {
+                int count = parent.childCount;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    var child = parent.GetChild(i);
+                    if (child != null)
+                        Object.Destroy(child.gameObject);
+                }
+
+                MelonLogger.Msg($"[UIFactory] Cleared {count} children from: {parent.name}");
+            }
+            catch (System.Exception e)
+            {
+                MelonLogger.Error($"[UIFactory] Exception during ClearChildren: {e.Message}");
+            }
+        }
 
         private void RefreshQuestList()
         {
             MelonLogger.Msg("RefreshQuestList called. quests.Count=" + (quests != null ? quests.Count.ToString() : "null"));
-            UIFactory.ClearChildren(questListContainer);
+            ClearChildren(questListContainer);
 
             foreach (var quest in quests)
             {
                 if (quest == null) { MelonLogger.Warning("Null quest encountered in RefreshQuestList."); continue; }
-                
-                
+
+
                 var def = ProductManager.DiscoveredProducts.FirstOrDefault(p => p.Name == quest.ProductID);
 
                 if (def == null)
@@ -188,7 +219,7 @@ protected override void OnCreated()
                     mafiaLabel = "Client: Russian Mafia";
                 }
 
-                
+
 
                 Sprite iconSprite = def.Icon;
 
@@ -220,7 +251,7 @@ protected override void OnCreated()
 
             MelonLogger.Msg($"Active quest : {active.Data.ProductID} ");
 
-            
+
 
             try
             {

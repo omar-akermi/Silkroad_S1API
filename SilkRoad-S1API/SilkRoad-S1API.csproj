@@ -96,20 +96,20 @@
 
     <!-- Shared Deps -->
     <ItemGroup>
-        <!-- <PackageReference Include="S1API" Version="1.2.4" />-->
+        <PackageReference Include="S1API" Version="1.5.0" />
        <Reference Include="0Harmony">
            <HintPath>$(MelonLoaderAssembliesPath)\0Harmony.dll</HintPath>
        </Reference>
        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
        <PackageReference Include="LavaGang.MelonLoader" Version="0.7.0" />
-      <Reference Include="S1API">
-         <HintPath>..\..\..\Documents\GitHub\S1API\S1API\bin\Il2Cpp\netstandard2.1\S1API.dll</HintPath>
-       </Reference>
+    <!--  <Reference Include="S1API">
+        <HintPath>..\..\..\Documents\GitHub\S1API\S1API\bin\Il2Cpp\netstandard2.1\S1API.dll</HintPath>
+      </Reference>-->
 
 
-    </ItemGroup>
+   </ItemGroup>
 
-    <!-- Automated local deployment -->
+   <!-- Automated local deployment -->
     <Target Name="PostBuildIl2Cpp" AfterTargets="Build" Condition=" '$(AutomateLocalDeployment)' == 'true' and '$(Configuration)' == 'Il2Cpp' ">
         <Copy SourceFiles=".\bin\Il2Cpp\netstandard2.1\SilkRoad-S1API.dll" DestinationFiles="$(LocalIl2CppDeploymentPath)\Mods\Silkroad.dll"/>
         <Copy SourceFiles=".\bin\Il2Cpp\netstandard2.1\SilkRoad-S1API.dll" DestinationFiles="$(LocalMonoDeploymentPath)\Mods\Silkroad.dll"/>

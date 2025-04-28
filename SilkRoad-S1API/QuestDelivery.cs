@@ -9,12 +9,11 @@ using S1API.DeadDrops;
 using S1API.Quests;
 using S1API.Products;
 using S1API.Saveables;
-using S1API.NPCs;
 using System.Collections.Generic;
+using S1API.Console;
 using S1API.GameTime;
 using S1API.Internal.Utils;
 using S1API.PhoneApp;
-using S1API.Utils;
 using Random = UnityEngine.Random;
 
 namespace SilkRoad
@@ -33,7 +32,7 @@ namespace SilkRoad
         public static QuestDelivery? Active { get; internal set; }
 
         public static event Action OnQuestCompleted;
-        protected override Sprite? QuestIcon => ImageUtils.LoadImage("..\\..\\Mods\\silkroad\\SilkroadIcon_quest.png");
+        protected override Sprite? QuestIcon => ImageUtils.LoadImage("silkroad\\SilkroadIcon_quest.png");
         protected override void OnLoaded()
         {
             base.OnLoaded();
@@ -56,7 +55,7 @@ namespace SilkRoad
                 MelonLogger.Warning("⚠️ Buyer NPC still not initialized after timeout. Skipping status sync.");
                 yield break;
             }
-            
+
         }
         public QuestEntry GetDeliveryEntry() => deliveryEntry;
         public QuestEntry GetRewardEntry() => rewardEntry;
@@ -108,7 +107,7 @@ namespace SilkRoad
                 //deliveryDrop = drops[5];
 
                 Data.DeliveryDropGUID = deliveryDrop.GUID; Data.Initialized = true;
-                
+
             }
             else
             {
@@ -143,7 +142,7 @@ namespace SilkRoad
             deliveryDrop.Storage.OnClosed += CheckDelivery;
 
             //Contacts.Buyer?.SendDeliveryAccepted(Data.ProductID, (int)Data.RequiredAmount);
-
+            MelonLogger.Msg($"Quest Entries {this.QuestEntries.Count()} ");
             MelonLogger.Msg("📦 QuestDelivery started with drop locations assigned.");
         }
 
