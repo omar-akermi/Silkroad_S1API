@@ -2,7 +2,7 @@
 using MelonLoader;
 using Silkroad;
 
-[assembly: MelonInfo(typeof(MyMod), "Silk Road App", "1.1.5", "Akermi")]
+[assembly: MelonInfo(typeof(MyMod), "Silk Road App", "1.1.6", "Akermi")]
 [assembly: MelonGame("TVGS", "Schedule I")]
 
 

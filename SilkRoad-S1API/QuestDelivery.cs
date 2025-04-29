@@ -14,6 +14,7 @@ using S1API.Console;
 using S1API.GameTime;
 using S1API.Internal.Utils;
 using S1API.PhoneApp;
+using S1API.Quests.Constants;
 using Random = UnityEngine.Random;
 
 namespace SilkRoad
@@ -66,7 +67,7 @@ namespace SilkRoad
             TimeManager.OnDayPass -= TimeManager_OnDayPass;
 
             if (deliveryEntry != null && deliveryEntry.State != QuestState.Completed)
-                deliveryEntry.SetState(QuestState.Failed);
+                rewardEntry.SetState(QuestState.Failed); // ✅
 
             if (rewardEntry != null && rewardEntry.State != QuestState.Completed)
                 rewardEntry.SetState(QuestState.Failed);
@@ -142,7 +143,7 @@ namespace SilkRoad
             deliveryDrop.Storage.OnClosed += CheckDelivery;
 
             //Contacts.Buyer?.SendDeliveryAccepted(Data.ProductID, (int)Data.RequiredAmount);
-            MelonLogger.Msg($"Quest Entries {this.QuestEntries.Count()} ");
+            MelonLogger.Msg($"Quest Entries {this.QuestEntries.Count} ");
             MelonLogger.Msg("📦 QuestDelivery started with drop locations assigned.");
         }
 
